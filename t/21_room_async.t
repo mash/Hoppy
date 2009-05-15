@@ -10,7 +10,8 @@ use POE::Sugar::Args;
             auth => 'Hoppy::Service::AuthAsync::HTTP',
         },
         auth => {
-            url => 'http://www.google.com/',
+            login  => 'http://www.google.com/',
+            logout => 'http://www.google.com/',
         },
     };
     my $server = Hoppy->new( config => $config );
@@ -20,12 +21,13 @@ use POE::Sugar::Args;
 
     isa_ok( $room, "Hoppy::Room::Memory::AuthAsync", "isa AuthAsync room" );
     isa_ok( $server->service->{auth}, "Hoppy::Service::AuthAsync::HTTP", "auth isa AuthAsync::HTTP service" );
+    can_ok( $server->service->{auth}, qw/login logout/ );
 
     POE::Session->create(
         inline_states => {
             _start => sub {
                 my $poe = sweet_args;
-                
+
                 $room->login( { user_id => 'hoge', session_id => 1, room_id => 'room1' }, $poe );
 
                 is_deeply( $room->{where_in}, {}, 'empty room just after login()' );
@@ -36,6 +38,11 @@ use POE::Sugar::Args;
             after_login => sub {
 
                 is_deeply( $room->{where_in}, { hoge => 'room1' }, 'has joined room 1sec after login' );
+
+                $room->logout( { user_id => 'hoge' } );
+
+                is_deeply( $room->{where_in}, {}, 'suddenlly logout after logout()' );
+                ok( $server->{not_authorized}{1}, 'hoge is not authorized' );
 
                 $server->stop;
             },

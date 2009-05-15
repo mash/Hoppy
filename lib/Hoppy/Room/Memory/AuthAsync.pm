@@ -11,6 +11,7 @@ sub new {
     $self->create_room('global');
     $self->{where_in}                = {};
     $self->context->{not_authorized} = {};
+    $self->context->{authorizing}    = {};
     croak 'why use this module without auth?' unless $self->context->service->{auth};
     return $self;
 }
@@ -50,7 +51,7 @@ sub login {
     # is authorizing async, but still 'not_authorized'
     $c->{authorizing}->{$session_id} = $user_id;
 
-    $c->service->{auth}->work( $args, $poe );
+    $c->service->{auth}->login( $args, $poe );
     return 'authorizing';
 }
 
@@ -91,7 +92,13 @@ sub logout {
     my $room_id = delete $self->{where_in}->{$user_id};
     delete $self->{rooms}->{$room_id}->{$user_id};
     $self->context->{not_authorized}->{ $user->session_id } = 1;
+
+    $self->context->service->{auth}->logout( $args, $poe );
+
     return 1;
+}
+
+sub logout_complete {
 }
 
 sub fetch_user_from_user_id {

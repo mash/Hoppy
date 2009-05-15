@@ -15,12 +15,12 @@ sub new {
     return $self;
 }
 
-sub work {
+sub login {
     my ($self, $args, $poe) = @_;
-    
+
     my $ua = POE::Component::Client::HTTPDeferred->new;
 
-    my $req = $self->build_request( $args );
+    my $req = $self->build_login_request( $args );
 
     my $d = $ua->request( $req );
     $d->addBoth(
@@ -34,6 +34,19 @@ sub work {
     );
 }
 
+sub build_login_request {
+    my ($self, $args) = @_;
+
+    my $auth_url = URI->new( $self->config->{login} );
+    $auth_url->query_form({
+        user_id    => $args->{user_id},
+        password   => $args->{password},
+        session_id => $args->{session_id},
+        room_id    => $args->{room_id} || 'global',
+    });
+    return POST $auth_url;
+}
+
 sub is_login_success {
     my ($self, $args, $res) = @_;
 
@@ -42,10 +55,30 @@ sub is_login_success {
     return 1;
 }
 
-sub build_request {
+sub logout {
+    my ($self, $args, $poe) = @_;
+
+    my $ua = POE::Component::Client::HTTPDeferred->new;
+
+    my $req = $self->build_logout_request( $args );
+
+    my $d = $ua->request( $req );
+    $d->addBoth(
+        sub {
+            my $res = shift;
+
+            $ua->shutdown;
+
+            $self->context->room->logout_complete( $args, $poe );
+        }
+    );
+
+}
+
+sub build_logout_request {
     my ($self, $args) = @_;
 
-    my $auth_url = URI->new( $self->config->{url} );
+    my $auth_url = URI->new( $self->config->{logout} );
     $auth_url->query_form({
         user_id    => $args->{user_id},
         password   => $args->{password},
