@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use Hoppy;
-use Test::More tests => 3;
+use Test::More tests => 4;
 use FindBin::libs;
 
 my %config = (
@@ -24,6 +24,7 @@ is_deeply(
     },
     'config passed correctly'
 );
+
 isa_ok( $server->formatter,       'Hoppy::Formatter::JSON' );
 isa_ok( $server->service->{auth}, 'MyAuth' );
 
@@ -37,3 +38,10 @@ POE::Session->create(
 
 $server->start;
 
+
+delete $config{regist_services};
+my $server_by_regist_service = Hoppy->new( config => \%config );
+$server_by_regist_service->regist_service(
+    auth => 'MyAuth',
+);
+isa_ok( $server->service->{auth}, 'MyAuth' );

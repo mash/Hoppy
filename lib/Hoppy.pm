@@ -102,10 +102,10 @@ sub regist_service {
         unless ( ref($class) ) {
             $class->require or die $@;
             my $obj = $class->new( context => $self );
-            $self->handler->{$label} = $obj;
+            $self->service->{$label} = $obj;
         }
         else {
-            $self->handler->{$label} = $class;
+            $self->service->{$label} = $class;
         }
     }
 }

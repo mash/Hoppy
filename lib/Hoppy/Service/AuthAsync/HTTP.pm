@@ -89,3 +89,56 @@ sub build_logout_request {
 }
 
 1;
+__END__
+
+=head1 NAME
+
+Hoppy::Service::AuthAsync::HTTP - Asynchronously login/logout using HTTP.
+
+=head1 SYNOPSIS
+
+  use Hoppy;
+
+  my $config = {
+      Room => 'Hoppy::Room::Memory::AuthAsync',
+      regist_services => {
+          auth => 'Hoppy::Service::AuthAsync::HTTP',
+      },
+      auth => {
+          login  => 'http://example.com/login',
+          logout => 'http://example.com/logout',
+      },
+  };
+
+  my $server = Hoppy->new;
+
+=head1 DESCRIPTION
+
+Asynchronously login/logout using HTTP. POST to an url to login/logout.
+
+=head1 METHODS
+
+=head2 new
+
+=head2 login
+
+=head2 build_login_request
+
+=head2 is_login_success
+
+=head2 logout
+
+=head2 build_logout_request
+
+=head1 AUTHOR
+
+Masakazu Ohtsuka (mash) E<lt>o.masakazu@gmail.comE<gt>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+=cut

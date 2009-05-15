@@ -129,16 +129,27 @@ __END__
 
 =head1 NAME
 
-Hoppy::Room::Memory - Room on memory. It manages users and their sessions.
+Hoppy::Room::Memory::AuthAsync - Room on memory, and also somewhere else where you access asynchronously. It manages users and their sessions.
 
 =head1 SYNOPSIS
 
   use Hoppy;
 
+  my $config = {
+      Room => 'Hoppy::Room::Memory::AuthAsync',
+      regist_services => {
+          auth => 'Hoppy::Service::AuthAsync::HTTP',
+      },
+      auth => {
+          login  => 'http://example.com/login',
+          logout => 'http://example.com/logout',
+      },
+  };
+
   my $server = Hoppy->new;
   my $room = $server->room; # get room object from the Hoppy.
 
-  # longin and logout are handled automatically.
+  # login and logout are handled automatically, asynchronously.
   $room->login(...);
   $room->logout(...);
 
@@ -147,44 +158,17 @@ Hoppy::Room::Memory - Room on memory. It manages users and their sessions.
   $room->delete_room('hoge');
 
   # you can fetch user(s) object from any ID.
+  # Because of the asynchronousity, calling $room->fetch_user* just after $room->login will fail
+  # wait for login_complete to fetch_user.
+  # On the other hand, logout will make users unfetch-able immediately, while doing the actual logout asynchronously.
   my $user  = $room->fetch_user_from_user_id($user_id);
   my $user  = $room->fetch_user_from_session_id($session_id);
   my $users = $room->fetch_users_from_room_id($room_id);
 
 =head1 DESCRIPTION
 
-Room on memory. It manages users and their sessions.
+Room on memory, and also somewhere else where you access asynchronously. It manages users and their sessions.
 
-=head1 METHODS
-
-=head2 new
-
-=head2 regist_service( $service_label => $service_class )
-
-=head2 start
-
-=head2 stop
-
-=head2 unicast( $user_id, $message )
-
-=head2 multicast( $sender_session_id, $room_id, $message )
-
-=head2 broadcast( $sender_session_id, $message )
-
-=head2 dispatch($method, $params, $poe)
-
-=head1 AUTHOR
-
-Takeshi Miki E<lt>miki@cpan.orgE<gt>
-
-=head1 LICENSE
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
-
-=head1 SEE ALSO
-
-=cut
 =head1 METHODS
 
 =head2 new
@@ -195,6 +179,11 @@ it under the same terms as Perl itself.
 
 =head2 login(\%args,$poe_object);
 
+  Do login asynchronously.
+  Calls back login_complete when completed.
+  $c->regist_service your Hoppy::Service::AuthAsync::Something class to implement the asynchronousity,
+  for example Hoppy::Service::AuthAsync::HTTP which posts async to any url to do authentication.
+
   %args = (
     user_id    => $user_id,
     session_id => $session_id,
@@ -202,9 +191,17 @@ it under the same terms as Perl itself.
     room_id    => $room_id,   #optional
   );
 
+=head2 login_complete( \%args, $poe_object, $login_success );
+
 =head2 logout(\%args, $poe_object);
 
+  will logout immediately, and do the actual logout asynchronously
+  
   %args = ( user_id => $user_id );
+
+  Do logout asynchronously.
+
+=head2 logout_complete( \%args, $poe_object );
 
 =head2 fetch_user_from_user_id($user_id) 
 
@@ -215,6 +212,8 @@ it under the same terms as Perl itself.
 =head1 AUTHOR
 
 Takeshi Miki E<lt>miki@cpan.orgE<gt>
+
+Masakazu Ohtsuka (mash) E<lt>o.masakazu@gmail.comE<gt>
 
 =head1 LICENSE
 
